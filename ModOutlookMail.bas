@@ -129,6 +129,7 @@ Sub SendOutlookMail(ToAddress As String, _
     End With
     
 End Sub
+
 Function 本文を表挿入用に修正(Bunsyo, HyoInsertIti%)
 'Outlookメール送信用のライブラリ
 '配列に入った文章を改行を追加して連結して文字列にする
@@ -163,6 +164,7 @@ Function 本文を表挿入用に修正(Bunsyo, HyoInsertIti%)
     本文を表挿入用に修正 = Output2
     
 End Function
+
 Function 本文を連結する(Bunsyo)
 'Outlookメール送信用のライブラリ
 '配列に入った文章を改行を追加して連結して文字列にする
