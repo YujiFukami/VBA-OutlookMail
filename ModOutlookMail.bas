@@ -1,10 +1,20 @@
 Attribute VB_Name = "ModOutlookMail"
 Option Explicit
 
+'TestSendOutlookMail ・・・元場所：FukamiAddins3.ModOutlookMail
+'SendOutlookMail     ・・・元場所：FukamiAddins3.ModOutlookMail
+'本文を表挿入用に修正・・・元場所：FukamiAddins3.ModOutlookMail
+'本文を連結する      ・・・元場所：FukamiAddins3.ModOutlookMail
+
+
+
 Sub TestSendOutlookMail()
     
-    Dim ToAddress$, InputTitle$, Bunsyo
-    Dim HyoCell As Range, HyoInsertIti%
+    Dim ToAddress    As String
+    Dim InputTitle   As String
+    Dim Bunsyo
+    Dim HyoCell      As Range
+    Dim HyoInsertIti As Integer
     ToAddress = "AAAAA@gmail.com;BBBB@gmail.com"
     InputTitle = "AAAA"
     ReDim Bunsyo(1 To 6)
@@ -19,13 +29,12 @@ Sub TestSendOutlookMail()
     HyoInsertIti = 3
     
     Call SendOutlookMail(ToAddress, InputTitle, Bunsyo, , , , , , True)
-'    Call SendOutlookMail(ToAddress, InputTitle, Bunsyo, HyoCell, HyoInsertIti, , , , True)
 
 End Sub
 
 Sub SendOutlookMail(ToAddress As String, _
                         InputTitle As String, Bunsyo, _
-                        Optional HyoCell As Range, Optional HyoInsertIti%, _
+                        Optional HyoCell As Range, Optional HyoInsertIti As Integer, _
                         Optional CCAddress As String = "", Optional BCCAddress As String = "", _
                         Optional AttachPathList = Empty, _
                         Optional SendenAruNaraTrue = True, _
@@ -34,30 +43,29 @@ Sub SendOutlookMail(ToAddress As String, _
 '使用には「Microsoft Outlook 16.0 Object Library」のライブラリを参照すること
 '20210721
     
-'ToAddress・・・宛先アドレス、複数なら「;」を間に入れること
-'InputTitle・・・件名
-'Bunsyo・・・メール本文
-'HyoCell・・・挿入する表のセル範囲
-'HyoInsertIti・・・メール本文に表を挿入する位置
-'CCAddress・・・CCのアドレス
-'BCCAddress・・・BCCのアドレス
-'AttachPathList・・・添付ファイルのファイルパス　リストで入力すること
-'SendenAruNaraTrue・・・宣伝文を文末で入力するか
+'ToAddress          ・・・宛先アドレス、複数なら「;」を間に入れること
+'InputTitle         ・・・件名
+'Bunsyo             ・・・メール本文
+'HyoCell            ・・・挿入する表のセル範囲
+'HyoInsertIti       ・・・メール本文に表を挿入する位置
+'CCAddress          ・・・CCのアドレス
+'BCCAddress         ・・・BCCのアドレス
+'AttachPathList     ・・・添付ファイルのファイルパス　リストで入力すること
+'SendenAruNaraTrue  ・・・宣伝文を文末で入力するか
 'AutoSendingNaraTrue・・・自動送信する場合はTrue デフォルトはFalse
 
     
     Dim objOutlook As Outlook.Application
-    Dim objMail As Outlook.MailItem
+    Dim objMail    As Outlook.MailItem
+    Dim attachObj  As Outlook.Attachments
+    Dim HyoSheet   As Worksheet
+    Dim strBunsyo  As String
+    Dim SendenBun  As String
 
     Set objOutlook = New Outlook.Application
     Set objMail = objOutlook.CreateItem(olMailItem)
-
-    Dim attachObj As Outlook.Attachments
     Set attachObj = objMail.Attachments
     
-    Dim HyoSheet As Worksheet
-    
-    Dim strBunsyo$
     If HyoCell Is Nothing Then
         '表がない
         strBunsyo = 本文を連結する(Bunsyo)
@@ -66,17 +74,17 @@ Sub SendOutlookMail(ToAddress As String, _
         Set HyoSheet = HyoCell.Parent   '←←←←←←←←←←←←←←←←←←←←←←←
     End If
 
-    Dim SendenBun As String
     SendenBun = "<<本メールはExcelのマクロ機能を用いて自動で送信されています。>>" '←←←←←←←←←←←←←←←←←←←←←←←
 
     If SendenAruNaraTrue Then
         strBunsyo = strBunsyo & vbLf & vbLf & SendenBun
     End If
 
-    Dim Rs&, Re&, Cs&, Ce& '始端行,列番号および終端行,列番号(Long型)
-    
-    Dim r
-    
+    Dim Rs           As Long
+    Dim Re           As Long
+    Dim Cs           As Long
+    Dim Ce           As Long
+    Dim R
     Dim TmpAttathPath
     
     '添付ファイル添付
@@ -113,11 +121,11 @@ Sub SendOutlookMail(ToAddress As String, _
             HyoCell.Select
             Selection.Copy
             
-            r = InStr(.Body, "【図】") - HyoInsertIti
+            R = InStr(.Body, "【図】") - HyoInsertIti
             .Body = Replace(.Body, "【図】", "")
             
             On Error Resume Next
-            objOutlook.ActiveInspector.WordEditor.Range(r, r).Paste
+            objOutlook.ActiveInspector.WordEditor.Range(R, R).Paste
             On Error GoTo 0
 
         End If
@@ -130,15 +138,20 @@ Sub SendOutlookMail(ToAddress As String, _
     
 End Sub
 
-Function 本文を表挿入用に修正(Bunsyo, HyoInsertIti%)
+Function 本文を表挿入用に修正(Bunsyo, HyoInsertIti As Integer)
 'Outlookメール送信用のライブラリ
 '配列に入った文章を改行を追加して連結して文字列にする
 '表の挿入位置に"【図】"を追加する。
 '20210721
     
     '空白位置にスペースを入れる（表の挿入位置がうまくいく）
-    Dim I%, J%, K%, M%, N% '数え上げ用(Integer型)
-    Dim Output1, Output2$
+    Dim I       As Integer
+    Dim J       As Integer
+    Dim K       As Integer
+    Dim M       As Integer
+    Dim N       As Integer
+    Dim Output1
+    Dim Output2 As String
     Output1 = Bunsyo
     For I = 1 To UBound(Bunsyo)
         If Output1(I) = "" Then
@@ -171,7 +184,11 @@ Function 本文を連結する(Bunsyo)
 '20210721
 
     Dim Output
-    Dim I%, J%, K%, M%, N% '数え上げ用(Integer型)
+    Dim I     As Integer
+    Dim J     As Integer
+    Dim K     As Integer
+    Dim M     As Integer
+    Dim N     As Integer
     N = UBound(Bunsyo, 1)
     Output = ""
     For I = 1 To N
@@ -185,3 +202,5 @@ Function 本文を連結する(Bunsyo)
     本文を連結する = Output
     
 End Function
+
+
